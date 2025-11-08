@@ -26,8 +26,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKER_USERNAME  }}/zay-shop
-
+          images: ${{ secrets.DOCKER_USERNAME  }}/shadcn-datable
+          tags: |
+            type=raw,value=build-${{ github.run_number }}
+            
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
@@ -43,7 +45,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
+
       - name: Install OC CLI
         run: |
           curl -L https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz | tar xz
@@ -54,7 +56,12 @@ jobs:
         with:
           openshift_server_url: https://api.rm3.7wse.p1.openshiftapps.com:6443
           openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
-      
+      - name: Update Deployment tag
+        run: |
+          echo "Reemplazando {{ tag }} con ${{ github.run_number }}"
+          sed -i "s|{{ tag }}|${{ github.run_number }}|g" oc.yaml
+          cat oc.yaml
+          
       - name: Deploy files
         run: |
           oc project pluaj-dev-dev
